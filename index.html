@@ -32,6 +32,15 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Slide Over Animation */
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
         /* Wiggle animation for delete mode */
         @keyframes wiggle {
             0% { transform: rotate(0deg); }
@@ -50,28 +59,50 @@
             -webkit-appearance: none; 
             margin: 0; 
         }
+        
+        /* Scrollbar styling for history */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
 
-    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-slate-100">
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-slate-100 z-10 relative">
         
         <!-- Left Panel: Inputs -->
         <div class="w-full md:w-1/2 p-8 md:p-10 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col h-full">
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-                        <i data-lucide="calculator" class="w-6 h-6"></i>
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                            <i data-lucide="calculator" class="w-6 h-6"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-800">RollCalc</h1>
                     </div>
-                    <h1 class="text-2xl font-bold text-slate-800">RollCalc</h1>
+                    <p class="text-slate-500 text-sm">Estimate remaining footage.</p>
                 </div>
-                <p class="text-slate-500 text-sm mb-8">Estimate the remaining footage on a roll of media based on its diameter and thickness.</p>
+                <!-- History Toggle Button (Mobile/Desktop) -->
+                <button onclick="toggleHistory()" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors relative">
+                    <i data-lucide="history" class="w-6 h-6"></i>
+                    <span id="historyBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white"></span>
+                </button>
             </div>
 
-            <form id="calculatorForm" class="space-y-6 flex-grow">
+            <form id="calculatorForm" class="space-y-5 flex-grow">
                 
                 <!-- Roll Diameter Input -->
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label for="rollDiameter" class="flex justify-between text-sm font-semibold text-slate-700">
                         Roll Diameter (Outer)
                         <span class="text-indigo-600 font-medium text-xs bg-indigo-50 px-2 py-0.5 rounded">inches</span>
@@ -87,7 +118,7 @@
                 </div>
 
                 <!-- Core Diameter Input -->
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label for="coreDiameter" class="flex justify-between text-sm font-semibold text-slate-700">
                         Core Diameter (Inner)
                         <span class="text-indigo-600 font-medium text-xs bg-indigo-50 px-2 py-0.5 rounded">inches</span>
@@ -103,7 +134,7 @@
                 </div>
 
                 <!-- Material Thickness Input -->
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label for="thickness" class="flex justify-between text-sm font-semibold text-slate-700">
                         Material Thickness
                         <span class="text-indigo-600 font-medium text-xs bg-indigo-50 px-2 py-0.5 rounded">inches</span>
@@ -118,8 +149,8 @@
                     </div>
                     
                     <!-- Presets Section -->
-                    <div class="mt-4 pt-2 border-t border-slate-100">
-                        <div class="flex justify-between items-center mb-3">
+                    <div class="mt-2 pt-2 border-t border-slate-100">
+                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                                 <i data-lucide="bookmark" class="w-3 h-3"></i> Presets
                             </span>
@@ -128,14 +159,11 @@
                                 <i data-lucide="settings-2" class="w-3 h-3"></i>
                             </button>
                         </div>
-                        
-                        <!-- Dynamic Presets Container -->
                         <div id="presetsContainer" class="flex gap-2 flex-wrap min-h-[32px]">
                             <!-- Presets injected here by JS -->
                         </div>
-
-                        <!-- Add/Edit Preset Form (Hidden by default) -->
-                        <div id="addPresetForm" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 border-dashed fade-in shadow-inner">
+                         <!-- Add/Edit Preset Form (Hidden by default) -->
+                         <div id="addPresetForm" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 border-dashed fade-in shadow-inner">
                             <div class="flex justify-between items-center mb-3">
                                 <h4 id="formTitle" class="text-xs font-bold text-slate-600 uppercase">Add New Preset</h4>
                                 <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1">
@@ -165,12 +193,22 @@
                     </div>
                 </div>
 
+                <!-- Notes Input -->
+                <div class="space-y-1.5 pt-2">
+                    <label for="notes" class="flex justify-between text-sm font-semibold text-slate-700">
+                        Reference Note <span class="text-slate-400 font-normal italic text-xs">(Optional)</span>
+                    </label>
+                    <input type="text" id="notes" placeholder="e.g. Warehouse Batch #204"
+                        class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none text-sm text-slate-700 placeholder-slate-400">
+                </div>
+
                 <div class="pt-4 flex gap-3 mt-auto">
-                    <button type="button" onclick="calculate()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        Calculate
-                    </button>
-                    <button type="button" onclick="resetForm()" class="px-6 py-3 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center" aria-label="Reset Form">
+                    <button type="button" onclick="resetForm()" class="px-4 py-3 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center" aria-label="Reset Form">
                         <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                    <!-- Changed this to just be a visual calculation trigger if user wants, logic is realtime though -->
+                    <button type="button" onclick="calculate()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        Calculate
                     </button>
                 </div>
 
@@ -178,145 +216,120 @@
         </div>
 
         <!-- Right Panel: Visualization & Results -->
-        <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 md:p-10 flex flex-col justify-between relative overflow-hidden">
+        <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 md:p-10 flex flex-col justify-center relative overflow-hidden">
             
-            <!-- Decorative Background blob -->
+            <!-- Decorative Background -->
             <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
             <div class="absolute -bottom-8 -left-8 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
-            <!-- Visualization SVG -->
-            <div class="relative z-10 flex flex-col items-center justify-center flex-grow mb-8">
-                <svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-2xl">
-                    <!-- Defs for markers -->
-                    <defs>
-                        <marker id="arrow-start" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
-                            <path d="M4,1 L1,3 L4,5" fill="white" />
-                        </marker>
-                        <marker id="arrow-end" markerWidth="6" markerHeight="6" refX="2" refY="3" orient="auto" markerUnits="strokeWidth">
-                            <path d="M0,1 L3,3 L0,5" fill="white" />
-                        </marker>
-                        <!-- Thinner marker for thickness -->
-                        <marker id="arrow-end-thin" markerWidth="6" markerHeight="6" refX="2" refY="3" orient="auto" markerUnits="strokeWidth">
-                            <path d="M0,1 L3,3 L0,5" fill="#FCD34D" />
-                        </marker>
-                    </defs>
-
-                    <!-- Outer Roll Circle -->
-                    <circle cx="140" cy="140" r="100" fill="#312E81" stroke="#6366F1" stroke-width="1.5"/>
-                    
-                    <!-- Material Area Shading -->
-                    <path d="M140 140 m -98 0 a 98 98 0 1 0 196 0 a 98 98 0 1 0 -196 0" fill="#4338CA" fill-opacity="0.3"/>
-                    
-                    <!-- Core Circle -->
-                    <circle cx="140" cy="140" r="35" fill="#0F172A" stroke="#94A3B8" stroke-width="1.5"/>
-                    
-                    <!-- ROLL DIAMETER MEASUREMENT (Top) -->
-                    <!-- Line -->
-                    <line x1="40" y1="30" x2="240" y2="30" stroke="white" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
-                    <!-- Extension lines -->
-                    <line x1="40" y1="35" x2="40" y2="140" stroke="white" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
-                    <line x1="240" y1="35" x2="240" y2="140" stroke="white" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
-                    <!-- Label -->
-                    <rect x="100" y="20" width="80" height="20" fill="#0F172A" fill-opacity="0.8" rx="4"/>
-                    <text x="140" y="34" text-anchor="middle" font-size="11" fill="white" font-weight="600" font-family="sans-serif">Roll Diameter</text>
-
-                    <!-- CORE DIAMETER MEASUREMENT (Center) -->
-                    <!-- Line -->
-                    <line x1="105" y1="140" x2="175" y2="140" stroke="white" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
-                    <!-- Label below the line -->
-                    <rect x="100" y="145" width="80" height="18" fill="#0F172A" fill-opacity="0.8" rx="4"/>
-                    <text x="140" y="157" text-anchor="middle" font-size="10" fill="#E2E8F0" font-family="sans-serif">Core Diameter</text>
-
-                    <!-- MATERIAL THICKNESS (Right Side) -->
-                    <!-- Arrow pointing to the meat of the roll -->
-                    <line x1="260" y1="140" x2="210" y2="140" stroke="#FCD34D" stroke-width="1" marker-end="url(#arrow-end-thin)"/>
-                    <!-- Label -->
-                    <text x="250" y="130" text-anchor="middle" font-size="11" fill="#FCD34D" font-weight="600" font-family="sans-serif">Material</text>
-                    <text x="250" y="145" text-anchor="middle" font-size="11" fill="#FCD34D" font-weight="600" font-family="sans-serif">Thickness</text>
-                    
-                </svg>
-                <div class="mt-4 text-slate-400 text-xs text-center font-light">
-                    Diagram for visual reference
-                </div>
-            </div>
+            <!-- Visualization SVG Removed -->
 
             <!-- Result Display -->
-            <div class="relative z-10 bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/10 shadow-lg">
-                <h2 class="text-indigo-200 text-xs uppercase tracking-wider font-bold mb-2 flex items-center gap-2">
-                    <i data-lucide="ruler" class="w-4 h-4"></i> Estimated Length
-                </h2>
-                <div class="flex items-baseline gap-2">
-                    <span id="resultValue" class="text-5xl font-bold text-white tracking-tight">0</span>
-                    <span class="text-xl text-indigo-300 font-medium">feet</span>
+            <div class="relative z-10 bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/10 shadow-lg group w-full">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-indigo-200 text-xs uppercase tracking-wider font-bold mb-2 flex items-center gap-2">
+                            <i data-lucide="ruler" class="w-4 h-4"></i> Estimated Length
+                        </h2>
+                        <div class="flex items-baseline gap-2">
+                            <span id="resultValue" class="text-5xl font-bold text-white tracking-tight">0</span>
+                            <span class="text-xl text-indigo-300 font-medium">feet</span>
+                        </div>
+                    </div>
+                    <!-- Save Button -->
+                    <button onclick="addToHistory()" id="saveBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-lg shadow-lg opacity-50 cursor-not-allowed transition-all" disabled title="Enter valid data to save">
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                    </button>
                 </div>
                 <div id="errorMsg" class="hidden mt-3 p-2 bg-rose-500/20 border border-rose-500/30 rounded text-rose-200 text-sm flex items-center gap-2 animate-pulse">
                     <i data-lucide="alert-circle" class="w-4 h-4"></i>
                     <span>Check your inputs (Core > Roll?)</span>
                 </div>
+                <div id="saveSuccessMsg" class="hidden absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-md fade-in">
+                    Saved!
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- PRESET MANAGEMENT ---
+    <!-- History Panel / Drawer (Overlay) -->
+    <div id="historyOverlay" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity opacity-0" onclick="toggleHistory()"></div>
+    <div id="historyPanel" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i> History
+            </h2>
+            <button onclick="toggleHistory()" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
         
-        // Default presets
+        <div class="flex-grow overflow-y-auto p-4 custom-scrollbar" id="historyList">
+            <!-- History Items go here -->
+            <div class="text-center text-slate-400 mt-10 text-sm italic">
+                No calculations saved yet.
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50">
+            <button onclick="clearHistory()" class="w-full py-2 border border-slate-300 text-slate-600 rounded hover:bg-white hover:text-rose-600 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All History
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- PRESET & HISTORY MANAGEMENT ---
+        
         const defaultPresets = [
             { id: 'p1', name: 'IJ280 (Wrap)', core: 3.14, thickness: 0.01 },
             { id: 'p2', name: 'Reflective', core: 3.55, thickness: 0.014 },
             { id: 'p3', name: 'Perf Film', core: 3.3, thickness: 0.0155 }
         ];
 
-        // State
         let presets = [];
+        let historyLog = [];
         let isManageMode = false;
-        let editingId = null; // Track which preset is being edited
+        let editingId = null;
+        let currentResult = 0; // Store current calculation result
+        let isValidCalc = false;
 
-        // Initialize
-        function initPresets() {
-            const saved = localStorage.getItem('rollCalcPresets');
-            if (saved) {
-                try {
-                    presets = JSON.parse(saved);
-                } catch(e) {
-                    presets = [...defaultPresets];
-                }
-            } else {
-                presets = [...defaultPresets];
-            }
+        function initApp() {
+            // Load Presets
+            const savedPresets = localStorage.getItem('rollCalcPresets');
+            presets = savedPresets ? JSON.parse(savedPresets) : [...defaultPresets];
             renderPresets();
+
+            // Load History
+            const savedHistory = localStorage.getItem('rollCalcHistory');
+            historyLog = savedHistory ? JSON.parse(savedHistory) : [];
+            updateHistoryBadge();
+
             lucide.createIcons();
         }
 
-        // Render buttons
+        // --- PRESETS FUNCTIONS ---
         function renderPresets() {
             const container = document.getElementById('presetsContainer');
             container.innerHTML = '';
-
             if (presets.length === 0 && !isManageMode) {
                 container.innerHTML = `<span class="text-xs text-slate-400 italic py-1">No presets saved.</span>`;
                 return;
             }
-
             presets.forEach(p => {
                 const btn = document.createElement('div');
                 btn.className = 'relative group';
-                
-                // Highlight button if currently being edited
                 const isEditingThis = editingId === p.id;
                 const activeClass = isEditingThis 
                     ? 'bg-indigo-100 ring-2 ring-indigo-500 border-indigo-500 text-indigo-700' 
                     : 'bg-white border-slate-200 text-slate-600 shadow-sm hover:border-indigo-300 hover:text-indigo-600';
                 
-                // Base button style
                 let btnHtml = `
                     <button type="button" onclick="handlePresetClick('${p.id}')" 
                         class="text-xs px-3 py-1.5 border font-medium rounded-md transition-all ${activeClass} ${isManageMode ? 'wiggle cursor-pointer pr-4' : ''}">
                         ${p.name}
                     </button>
                 `;
-
-                // Add Delete Badge if in manage mode
                 if (isManageMode) {
                     btnHtml += `
                         <button onclick="deletePreset('${p.id}', event)" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 shadow-sm transform scale-0 group-hover:scale-100 transition-transform duration-200" style="transform: scale(1)">
@@ -324,19 +337,14 @@
                         </button>
                     `;
                 }
-
                 btn.innerHTML = btnHtml;
                 container.appendChild(btn);
             });
-
-            // Re-init icons for dynamic content
             lucide.createIcons();
         }
 
-        // Toggle Manage Mode
         function toggleManageMode() {
             isManageMode = !isManageMode;
-            
             const form = document.getElementById('addPresetForm');
             const manageText = document.getElementById('manageText');
             const editHint = document.getElementById('editHint');
@@ -347,188 +355,269 @@
                 manageText.innerText = 'Done';
                 manageText.parentNode.classList.add('bg-indigo-100', 'text-indigo-800');
             } else {
-                // Exit manage mode
-                cancelEdit(); // Reset form
+                cancelEdit();
                 form.classList.add('hidden');
                 manageText.innerText = 'Manage';
                 manageText.parentNode.classList.remove('bg-indigo-100', 'text-indigo-800');
             }
-            
             renderPresets();
         }
 
-        // Start Editing a Preset
         function editPreset(id) {
             const p = presets.find(pre => pre.id === id);
             if (!p) return;
-
             editingId = id;
-            
-            // Fill form
             document.getElementById('newPresetName').value = p.name;
             document.getElementById('newPresetCore').value = p.core;
             document.getElementById('newPresetThick').value = p.thickness;
-            
-            // Update UI text
             document.getElementById('formTitle').innerText = 'Edit Preset';
             document.getElementById('savePresetBtn').innerText = 'Update Preset';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
-            
-            // Re-render to show active state
             renderPresets();
         }
 
-        // Cancel Edit Mode
         function cancelEdit() {
             editingId = null;
             document.getElementById('newPresetName').value = '';
             document.getElementById('newPresetCore').value = '';
             document.getElementById('newPresetThick').value = '';
-            
             document.getElementById('formTitle').innerText = 'Add New Preset';
             document.getElementById('savePresetBtn').innerText = 'Add Preset';
             document.getElementById('cancelEditBtn').classList.add('hidden');
-            
             if (isManageMode) renderPresets();
         }
 
-        // Save (Add or Update) Preset
         function savePreset() {
-            const nameEl = document.getElementById('newPresetName');
-            const coreEl = document.getElementById('newPresetCore');
-            const thickEl = document.getElementById('newPresetThick');
+            const name = document.getElementById('newPresetName').value.trim();
+            const core = parseFloat(document.getElementById('newPresetCore').value);
+            const thickness = parseFloat(document.getElementById('newPresetThick').value);
 
-            const name = nameEl.value.trim();
-            const core = parseFloat(coreEl.value);
-            const thickness = parseFloat(thickEl.value);
-
-            if (!name || isNaN(core) || isNaN(thickness)) {
-                // visual shake or simple alert
-                return;
-            }
+            if (!name || isNaN(core) || isNaN(thickness)) return;
 
             if (editingId) {
-                // Update existing
                 const index = presets.findIndex(p => p.id === editingId);
-                if (index !== -1) {
-                    presets[index] = { ...presets[index], name, core, thickness };
-                }
-                // Exit edit mode for the form but stay in manage mode
+                if (index !== -1) presets[index] = { ...presets[index], name, core, thickness };
                 cancelEdit();
             } else {
-                // Add new
-                const newPreset = {
-                    id: 'p' + Date.now(),
-                    name: name,
-                    core: core,
-                    thickness: thickness
-                };
-                presets.push(newPreset);
-                
-                // Clear inputs
-                nameEl.value = '';
-                coreEl.value = '';
-                thickEl.value = '';
+                presets.push({ id: 'p' + Date.now(), name, core, thickness });
+                document.getElementById('newPresetName').value = '';
             }
-
-            savePresets();
+            localStorage.setItem('rollCalcPresets', JSON.stringify(presets));
             renderPresets();
         }
 
-        // Delete Preset
         function deletePreset(id, event) {
-            if(event) event.stopPropagation(); // Prevent triggering edit
-            
-            if (editingId === id) {
-                cancelEdit();
-            }
-            
+            if(event) event.stopPropagation();
+            if (editingId === id) cancelEdit();
             presets = presets.filter(p => p.id !== id);
-            savePresets();
+            localStorage.setItem('rollCalcPresets', JSON.stringify(presets));
             renderPresets();
         }
 
-        // Handle Click (Apply preset or Edit if managing)
         function handlePresetClick(id) {
             if (isManageMode) {
                 editPreset(id);
             } else {
                 const p = presets.find(pre => pre.id === id);
                 if (p) {
-                    setPreset(p.core, p.thickness);
+                    document.getElementById('coreDiameter').value = p.core;
+                    document.getElementById('thickness').value = p.thickness;
+                    calculate();
                 }
             }
         }
 
-        // Save to LocalStorage
-        function savePresets() {
-            localStorage.setItem('rollCalcPresets', JSON.stringify(presets));
-        }
-
-
         // --- CALCULATOR LOGIC ---
-
-        function setPreset(coreVal, thickVal) {
-            document.getElementById('coreDiameter').value = coreVal;
-            document.getElementById('thickness').value = thickVal;
-            calculate();
-        }
-
         function resetForm() {
             document.getElementById('calculatorForm').reset();
             document.getElementById('resultValue').innerText = "0";
             document.getElementById('errorMsg').classList.add('hidden');
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('saveBtn').classList.add('opacity-50', 'cursor-not-allowed');
+            isValidCalc = false;
         }
 
         function calculate() {
-            // Get inputs
             const rollDiameter = parseFloat(document.getElementById('rollDiameter').value);
             const coreDiameter = parseFloat(document.getElementById('coreDiameter').value);
             const thickness = parseFloat(document.getElementById('thickness').value);
             
             const resultDisplay = document.getElementById('resultValue');
             const errorMsg = document.getElementById('errorMsg');
+            const saveBtn = document.getElementById('saveBtn');
 
-            // Logic Validation
-            if (isNaN(rollDiameter) || isNaN(coreDiameter) || isNaN(thickness)) {
+            if (isNaN(rollDiameter) || isNaN(coreDiameter) || isNaN(thickness) || rollDiameter <= 0 || coreDiameter < 0 || thickness <= 0) {
                 resultDisplay.innerText = "0";
+                isValidCalc = false;
+                disableSave();
                 return;
-            }
-
-            // Basic physics check
-            if (rollDiameter <= 0 || coreDiameter < 0 || thickness <= 0) {
-                 resultDisplay.innerText = "0";
-                 return;
             }
 
             if (coreDiameter >= rollDiameter) {
                 errorMsg.classList.remove('hidden');
                 resultDisplay.innerText = "0";
+                isValidCalc = false;
+                disableSave();
                 return;
             } else {
                 errorMsg.classList.add('hidden');
             }
 
-            // Formula: L = (((ROLL x ROLL) - (CORE x CORE)) x 3.14) / (48 x Thick)
             const rollSquared = rollDiameter * rollDiameter;
             const coreSquared = coreDiameter * coreDiameter;
             const numerator = (rollSquared - coreSquared) * 3.14;
             const denominator = 48 * thickness;
-            
             const lengthInFeet = numerator / denominator;
 
-            // Update UI
-            // Format number with commas for thousands
             if (isFinite(lengthInFeet) && lengthInFeet > 0) {
-                resultDisplay.innerText = Math.round(lengthInFeet).toLocaleString();
+                currentResult = Math.round(lengthInFeet);
+                resultDisplay.innerText = currentResult.toLocaleString();
+                isValidCalc = true;
+                enableSave();
             } else {
                 resultDisplay.innerText = "0";
+                isValidCalc = false;
+                disableSave();
             }
         }
 
-        // Start App
-        initPresets();
+        function enableSave() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function disableSave() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // --- HISTORY FUNCTIONS ---
+        function toggleHistory() {
+            const overlay = document.getElementById('historyOverlay');
+            const panel = document.getElementById('historyPanel');
+            
+            if (panel.classList.contains('translate-x-full')) {
+                // Open
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                panel.classList.remove('translate-x-full');
+                renderHistory();
+            } else {
+                // Close
+                overlay.classList.add('opacity-0');
+                panel.classList.add('translate-x-full');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function addToHistory() {
+            if (!isValidCalc) return;
+
+            const roll = document.getElementById('rollDiameter').value;
+            const core = document.getElementById('coreDiameter').value;
+            const thick = document.getElementById('thickness').value;
+            const note = document.getElementById('notes').value;
+
+            const newItem = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                roll, core, thick, note,
+                result: currentResult
+            };
+
+            historyLog.unshift(newItem); // Add to top
+            if (historyLog.length > 50) historyLog.pop(); // Keep last 50
+
+            localStorage.setItem('rollCalcHistory', JSON.stringify(historyLog));
+            
+            // UI Feedback
+            const successMsg = document.getElementById('saveSuccessMsg');
+            successMsg.classList.remove('hidden');
+            setTimeout(() => successMsg.classList.add('hidden'), 2000);
+            
+            updateHistoryBadge();
+        }
+
+        function updateHistoryBadge() {
+            const badge = document.getElementById('historyBadge');
+            if (historyLog.length > 0) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function deleteHistoryItem(id) {
+            historyLog = historyLog.filter(item => item.id !== id);
+            localStorage.setItem('rollCalcHistory', JSON.stringify(historyLog));
+            renderHistory();
+            updateHistoryBadge();
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all history?')) {
+                historyLog = [];
+                localStorage.removeItem('rollCalcHistory');
+                renderHistory();
+                updateHistoryBadge();
+            }
+        }
+
+        function loadHistoryItem(id) {
+            const item = historyLog.find(i => i.id === id);
+            if (item) {
+                document.getElementById('rollDiameter').value = item.roll;
+                document.getElementById('coreDiameter').value = item.core;
+                document.getElementById('thickness').value = item.thick;
+                document.getElementById('notes').value = item.note || '';
+                calculate();
+                toggleHistory(); // Close panel
+            }
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+
+            if (historyLog.length === 0) {
+                list.innerHTML = `<div class="text-center text-slate-400 mt-10 text-sm italic">No calculations saved yet.</div>`;
+                return;
+            }
+
+            historyLog.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'bg-white border border-slate-100 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow';
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${item.date}</span>
+                        <div class="flex gap-2">
+                            <button onclick="loadHistoryItem(${item.id})" class="text-indigo-500 hover:text-indigo-700" title="Load this calculation">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteHistoryItem(${item.id})" class="text-slate-300 hover:text-rose-500" title="Delete">
+                                <i data-lucide="trash" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mb-2">
+                         <div class="text-lg font-bold text-slate-800">${item.result.toLocaleString()} <span class="text-sm font-normal text-slate-500">ft</span></div>
+                         ${item.note ? `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded max-w-[120px] truncate">${item.note}</span>` : ''}
+                    </div>
+                    <div class="text-xs text-slate-500 flex gap-3 border-t border-slate-50 pt-2">
+                        <span><span class="font-semibold">OD:</span> ${item.roll}"</span>
+                        <span><span class="font-semibold">Core:</span> ${item.core}"</span>
+                        <span><span class="font-semibold">Thick:</span> ${item.thick}"</span>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        // Run
+        initApp();
     </script>
 </body>
-
 </html>
